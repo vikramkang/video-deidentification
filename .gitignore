@@ -1,0 +1,11 @@
+# .gitignore
+venv/
+__pycache__/
+*.pyc
+input/
+output/
+logs/
+*.mp4
+*.avi
+*.mov
+*.mkv
