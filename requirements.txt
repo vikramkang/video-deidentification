@@ -1,0 +1,5 @@
+opencv-python
+mediapipe
+easyocr
+moviepy
+openai-whisper
