@@ -3,7 +3,12 @@ from pipeline.video_processor import VideoProcessor
 
 
 def main():
-    filename = r"video_sample1.mp4"
+    if len(sys.argv) < 2:
+        print("Usage: python main.py <video_filename>")
+        print("Example: python main.py test_video.mp4")
+        sys.exit(1)
+
+    filename = sys.argv[1]
 
     try:
         processor = VideoProcessor(filename)
