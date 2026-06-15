@@ -50,7 +50,11 @@ class VideoProcessor:
 
             try:
                 frame = self.face_blur.process_frame(frame)
-                frame = self.text_redactor.process_frame(frame, frame_number)
+
+                # Only run text detection every 30 frames
+                if frame_number % 30 == 0:
+                    frame = self.text_redactor.process_frame(frame, frame_number)
+
                 writer.write(frame)
                 self.logger.increment_processed_frames()
 

@@ -1,4 +1,5 @@
 import os
+import json
 import whisper
 import subprocess
 from config import SENSITIVE_KEYWORDS, WHISPER_MODEL, OUTPUT_DIR
@@ -10,13 +11,23 @@ class AudioRedactor:
         self.model = whisper.load_model(WHISPER_MODEL)
         self.muted_segments = []
 
+    def _has_audio(self, video_path):
+        command = [
+            "ffprobe", "-v", "quiet",
+            "-print_format", "json",
+            "-show_streams",
+            video_path
+        ]
+        result = subprocess.run(command, capture_output=True, text=True)
+        streams = json.loads(result.stdout).get("streams", [])
+        return any(s["codec_type"] == "audio" for s in streams)
+
     def transcribe(self, video_path):
         result = self.model.transcribe(video_path)
         return result["segments"]
 
     def find_sensitive_segments(self, segments):
         sensitive_segments = []
-
         for segment in segments:
             text = segment["text"].lower()
             for keyword in SENSITIVE_KEYWORDS:
@@ -28,14 +39,12 @@ class AudioRedactor:
                         "keyword_matched": keyword
                     })
                     break
-
         return sensitive_segments
 
     def mute_segments(self, video_path, sensitive_segments, output_filename):
         if not sensitive_segments:
             return video_path
 
-        # Build FFmpeg filter to mute sensitive segments
         filters = []
         for segment in sensitive_segments:
             start = segment["start"]
@@ -58,6 +67,10 @@ class AudioRedactor:
         return output_path
 
     def process(self, video_path, output_filename):
+        if not self._has_audio(video_path):
+            print("No audio stream found, skipping audio redaction.")
+            return video_path
+
         print("Transcribing audio...")
         segments = self.transcribe(video_path)
 
@@ -65,9 +78,7 @@ class AudioRedactor:
         sensitive_segments = self.find_sensitive_segments(segments)
 
         print(f"Found {len(sensitive_segments)} sensitive segments, muting...")
-        output_path = self.mute_segments(video_path, sensitive_segments, output_filename)
-
-        return output_path
+        return self.mute_segments(video_path, sensitive_segments, output_filename)
 
     def get_stats(self):
         return {
