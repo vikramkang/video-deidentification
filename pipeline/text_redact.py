@@ -2,11 +2,13 @@ import cv2
 import easyocr
 from config import TEXT_DETECTION_CONFIDENCE, TEXT_BOX_COLOR
 
+import torch
 
 class TextRedactor:
-
     def __init__(self):
-        self.reader = easyocr.Reader(['en'], gpu=False)
+        gpu_available = torch.cuda.is_available()
+        self.reader = easyocr.Reader(['en'], gpu=gpu_available)
+        print(f"EasyOCR using GPU: {gpu_available}")
         self.text_regions_redacted_count = 0
         self.flagged_frames = []
 
